@@ -89,9 +89,11 @@ describe Her::Model::Associations do
         builder.adapter :test do |stub|
           stub.get("/users/1") { |env| [200, {}, { :id => 1, :name => "Tobias Fünke", :comments => [{ :comment => { :id => 2, :body => "Tobias, you blow hard!", :user_id => 1 } }, { :comment => { :id => 3, :body => "I wouldn't mind kissing that man between the cheeks, so to speak", :user_id => 1 } }], :role => { :id => 1, :body => "Admin" }, :organization => { :id => 1, :name => "Bluth Company" }, :organization_id => 1 }.to_json] }
           stub.get("/users/2") { |env| [200, {}, { :id => 2, :name => "Lindsay Fünke", :organization_id => 2 }.to_json] }
+          stub.get("/users/3") { |env| [200, {}, { :id => 3, :role => nil, :name => "Lindsay Fünke", :organization_id => 2 }.to_json] }
           stub.get("/users/1/comments") { |env| [200, {}, [{ :comment => { :id => 4, :body => "They're having a FIRESALE?" } }].to_json] }
           stub.get("/users/2/comments") { |env| [200, {}, [{ :comment => { :id => 4, :body => "They're having a FIRESALE?" } }, { :comment => { :id => 5, :body => "Is this the tiny town from Footloose?" } }].to_json] }
           stub.get("/users/2/comments/5") { |env| [200, {}, { :comment => { :id => 5, :body => "Is this the tiny town from Footloose?" } }.to_json] }
+          stub.get("/users/3/role") { |env| [200, {}, { :id => 4, :body => "User" }.to_json] }
           stub.get("/users/2/role") { |env| [200, {}, { :id => 2, :body => "User" }.to_json] }
           stub.get("/users/1/role") { |env| [200, {}, { :id => 3, :body => "User" }.to_json] }
           stub.get("/users/1/posts") { |env| [200, {}, [{:id => 1, :body => 'blogging stuff', :admin_id => 1 }].to_json] }
@@ -132,6 +134,7 @@ describe Her::Model::Associations do
 
       @user_with_included_data = Foo::User.find(1)
       @user_without_included_data = Foo::User.find(2)
+      @user_with_nil_data = Foo::User.find(3)
     end
 
     let(:user_with_included_data_after_create) { Foo::User.create }
@@ -175,6 +178,12 @@ describe Her::Model::Associations do
       @user_without_included_data.role.should be_a(Foo::Role)
       @user_without_included_data.role.id.should == 2
       @user_without_included_data.role.body.should == "User"
+    end
+
+    it "fetches data that was nil through has_one" do
+      @user_with_nil_data.role.should be_a(Foo::Role)
+      @user_with_nil_data.role.id.should == 4
+      @user_with_nil_data.role.body.should == "User"
     end
 
     it "fetches has_one data even if it was included, only if called with parameters" do
